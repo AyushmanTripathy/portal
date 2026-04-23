@@ -2,25 +2,44 @@
   import { WebRTCTransfer } from '$lib/transfer.svelte';
   import { toast } from 'svelte-sonner';
   import { onMount } from 'svelte';
-  import { Plus, Copy, LogIn, Send, Download, File as FileIcon, Share2, ShieldCheck, Activity, Loader2, Heart } from '@lucide/svelte';
+  import { Plus, Copy, LogIn, Send, File as FileIcon, ShieldCheck, Loader2, Heart } from '@lucide/svelte';
 
   let transfer = $state<WebRTCTransfer | null>(null);
   let roomIdInput = $state('');
   let selectedFile = $state<File | null>(null);
   let isActionPending = $state(false);
+  let isDragging = $state(false);
 
   onMount(() => {
     transfer = new WebRTCTransfer();
   });
+
+  function handleDragOver(e: DragEvent) {
+    e.preventDefault();
+    isDragging = true;
+  }
+
+  function handleDragLeave() {
+    isDragging = false;
+  }
+
+  function handleDrop(e: DragEvent) {
+    e.preventDefault();
+    isDragging = false;
+    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+      selectedFile = e.dataTransfer.files[0];
+      toast.success(`Selected: ${selectedFile.name}`);
+    }
+  }
 
   async function handleCreateRoom() {
     if (!transfer) return;
     isActionPending = true;
     try {
       await transfer.startAsCaller();
-      toast.success('Room created successfully!');
+      toast.success('Room created');
     } catch (e) {
-      toast.error('Error creating room: ' + (e instanceof Error ? e.message : String(e)));
+      toast.error('Error: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       isActionPending = false;
     }
@@ -31,9 +50,9 @@
     isActionPending = true;
     try {
       await transfer.startAsCallee(roomIdInput);
-      toast.success('Joined room successfully!');
+      toast.success('Connected');
     } catch (e) {
-      toast.error('Error joining room: ' + (e instanceof Error ? e.message : String(e)));
+      toast.error('Error: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       isActionPending = false;
     }
@@ -43,9 +62,9 @@
     if (!selectedFile || !transfer) return;
     try {
       await transfer.sendFile(selectedFile);
-      toast.success('File sent successfully!');
+      toast.success('Sent');
     } catch (e) {
-      toast.error('Error sending file: ' + (e instanceof Error ? e.message : String(e)));
+      toast.error('Error: ' + (e instanceof Error ? e.message : String(e)));
     }
   }
 
@@ -70,209 +89,200 @@
     if (!transfer?.roomId) return;
     try {
       await navigator.clipboard.writeText(transfer.roomId);
-      toast.success('Room ID copied to clipboard!');
+      toast.success('Copied');
     } catch (err) {
-      toast.error('Failed to copy Room ID');
+      toast.error('Failed');
     }
+  }
+
+  function formatBytes(bytes: number): string {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 </script>
 
-<main class="min-h-screen p-4 md:p-8 bg-gray-50 flex flex-col items-center">
-  <div class="flex items-center gap-3 mb-8">
-    <div class="p-2.5 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-200">
-      <Share2 size={28} strokeWidth={2.5} />
-    </div>
-    <h1 class="text-3xl font-black text-gray-900 tracking-tight">Portal</h1>
-  </div>
+<main class="min-h-screen flex flex-col">
+  <div class="flex-1 flex flex-col items-center justify-center p-6">
+    <div class="w-full max-w-sm">
+      <header class="text-center mb-12">
+        <h1 class="text-2xl font-medium tracking-tight text-[--surface-900]">Portal</h1>
+        <p class="text-xs text-[--surface-400] mt-1">Secure P2P transfer</p>
+      </header>
 
-  {#if transfer}
-    <div class="w-full max-w-md bg-white p-6 md:p-8 rounded-2xl shadow-xl shadow-gray-200/50 space-y-8 border border-gray-100">
-      <!-- Connection Section -->
-      {#if !transfer.roomId}
-        <div class="space-y-6">
-          <button 
-            onclick={handleCreateRoom}
-            disabled={isActionPending}
-            class="w-full py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-bold shadow-lg shadow-blue-100 group disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {#if isActionPending}
-              <Loader2 size={22} class="animate-spin" />
-            {:else}
-              <Plus size={22} strokeWidth={3} class="group-hover:rotate-90 transition-transform" />
-            {/if}
-            Create Share Room
-          </button>
+      {#if transfer}
+        <div class="bg-[--surface-0] shadow-monolith rounded-lg p-6 space-y-6">
+          {#if !transfer.roomId}
+            <div class="space-y-4">
+              <button 
+                onclick={handleCreateRoom}
+                disabled={isActionPending}
+                class="group w-full py-3 bg-[--surface-900] text-[--surface-0] rounded font-medium text-sm hover:bg-[--surface-800] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {#if isActionPending}
+                  <Loader2 size={18} class="animate-spin" />
+                {:else}
+                  <Plus size={18} class="group-hover:rotate-90 transition-transform duration-300" />
+                {/if}
+                Create Room
+              </button>
 
-          <div class="relative flex items-center">
-            <div class="flex-grow border-t border-gray-100"></div>
-            <span class="flex-shrink mx-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Secure Peer Access</span>
-            <div class="flex-grow border-t border-gray-100"></div>
-          </div>
+              <div class="flex items-center gap-3">
+                <div class="flex-1 h-px bg-[--surface-200]"></div>
+                <span class="text-[10px] text-[--surface-400] uppercase tracking-widest">or</span>
+                <div class="flex-1 h-px bg-[--surface-200]"></div>
+              </div>
 
-          <div class="flex gap-2">
-            <input 
-              type="text" 
-              bind:value={roomIdInput} 
-              disabled={isActionPending}
-              placeholder="Paste Room ID..." 
-              class="flex-1 px-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-mono text-sm disabled:opacity-50"
-            />
-            <button 
-              onclick={handleJoinRoom}
-              disabled={isActionPending || !roomIdInput}
-              class="px-5 py-3 bg-gray-900 text-white rounded-xl hover:bg-black active:scale-[0.95] transition-all flex items-center gap-2 font-bold shadow-lg shadow-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Join Room"
-            >
-              {#if isActionPending}
-                <Loader2 size={20} class="animate-spin" />
-              {:else}
-                <LogIn size={20} strokeWidth={2.5} />
+              <div class="flex gap-2">
+                <input 
+                  type="text" 
+                  bind:value={roomIdInput} 
+                  disabled={isActionPending}
+                  placeholder="Room ID"
+                  class="flex-1 px-3 py-2.5 bg-[--surface-50] border border-[--surface-200] rounded text-sm focus:outline-none focus:border-[--surface-400] transition-colors disabled:opacity-50"
+                />
+                <button 
+                  onclick={handleJoinRoom}
+                  disabled={isActionPending || !roomIdInput}
+                  class="px-4 py-2.5 bg-[--surface-100] text-[--surface-700] rounded hover:bg-[--surface-200] active:scale-[0.98] transition-all flex items-center gap-2 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <LogIn size={18} />
+                </button>
+              </div>
+            </div>
+          {:else}
+            <div class="p-4 bg-[--surface-50] rounded space-y-4">
+              <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full {transfer.status === 'connected' ? 'bg-[--surface-900]' : 'bg-[--surface-400]'}"></div>
+                  <span class="text-[10px] text-[--surface-500] uppercase tracking-wider">
+                    {transfer.status === 'connected' ? 'Connected' : 'Waiting...'}
+                  </span>
+                </div>
+                <button 
+                  onclick={copyRoomId}
+                  class="flex items-center gap-1.5 px-2 py-1 text-[--surface-500] hover:text-[--surface-700] transition-colors text-xs cursor-pointer"
+                >
+                  <Copy size={12} />
+                  Copy
+                </button>
+              </div>
+              
+              <div class="p-3 bg-[--surface-0] border border-[--surface-200] rounded">
+                <p class="text-[11px] text-[--surface-600] font-mono break-all">{transfer.roomId}</p>
+              </div>
+              
+              <div class="flex items-center gap-1.5 text-[9px] text-[--surface-400]">
+                <ShieldCheck size={10} />
+                End-to-end encrypted
+              </div>
+            </div>
+          {/if}
+
+          {#if transfer.status === 'connected'}
+            <div class="space-y-4 pt-4 border-t border-[--surface-200]">
+              <div>
+                <label for="file-upload" class="block text-[10px] text-[--surface-400] uppercase tracking-widest mb-2">
+                  Select file
+                </label>
+                <div 
+                  role="region"
+                  aria-label="File drop zone"
+                  class="relative border-2 border-dashed {isDragging ? 'border-[--surface-600] bg-[--surface-100]' : 'border-[--surface-300]'} rounded p-6 transition-colors text-center"
+                  ondragover={handleDragOver}
+                  ondragleave={handleDragLeave}
+                  ondrop={handleDrop}
+                >
+                  <input 
+                    id="file-upload"
+                    type="file" 
+                    onchange={handleFileChange}
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  {#if selectedFile}
+                    <FileIcon size={24} class="mx-auto text-[--surface-600] mb-2" />
+                    <p class="text-sm text-[--surface-800] truncate max-w-[200px] mx-auto">{selectedFile.name}</p>
+                    <p class="text-xs text-[--surface-400] mt-0.5">{formatBytes(selectedFile.size)}</p>
+                  {:else}
+                    <FileIcon size={24} class="mx-auto text-[--surface-400] mb-2" />
+                    <p class="text-sm text-[--surface-600]">Drop file here</p>
+                    <p class="text-xs text-[--surface-400] mt-0.5">or click to browse</p>
+                  {/if}
+                </div>
+              </div>
+
+              <button 
+                type="button"
+                onclick={handleSendFile}
+                disabled={!selectedFile}
+                class="w-full py-3 bg-[--surface-900] text-[--surface-0] rounded font-medium text-sm hover:bg-[--surface-800] disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Send size={18} />
+                Send File
+              </button>
+
+              {#if transfer.progress > 0}
+                <div class="space-y-1">
+                  <div class="flex justify-between text-[10px]">
+                    <span class="text-[--surface-500]">Transferring</span>
+                    <span class="text-[--surface-700]">{transfer.progress}%</span>
+                  </div>
+                  <div class="h-1 bg-[--surface-200] rounded-full overflow-hidden">
+                    <div class="h-full bg-[--surface-800] transition-all" style="width: {transfer.progress}%"></div>
+                  </div>
+                </div>
               {/if}
-            </button>
-          </div>
+
+              {#if transfer.receivedFile}
+                <div class="p-4 bg-[--surface-100] rounded flex items-center justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="text-[9px] text-[--surface-500] uppercase tracking-wider mb-0.5">Received</p>
+                    <p class="text-sm text-[--surface-800] truncate">{transfer.receivedFile.name}</p>
+                  </div>
+                  <button 
+                    type="button"
+                    onclick={downloadFile}
+                    class="px-5 py-2.5 bg-[--surface-900] text-[--surface-0] rounded text-xs font-medium hover:bg-[--surface-800] active:scale-[0.98] transition-all shadow-monolith shrink-0 cursor-pointer"
+                  >
+                    Save
+                  </button>
+                </div>
+              {/if}
+            </div>
+          {/if}
         </div>
       {:else}
-        <div class="p-5 bg-blue-50/50 rounded-2xl border border-blue-100/50 space-y-4">
-          <div class="flex justify-between items-center">
-            <div class="flex items-center gap-2">
-              <div class="relative flex items-center justify-center">
-                {#if transfer.status === 'new' || transfer.status === 'checking'}
-                  <div class="w-2 h-2 rounded-full bg-amber-500"></div>
-                  <div class="absolute w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-                {:else}
-                  <div class="w-2 h-2 rounded-full {transfer.status === 'connected' ? 'bg-green-500' : 'bg-red-500'}"></div>
-                  {#if transfer.status === 'connected'}
-                    <div class="absolute w-2 h-2 rounded-full bg-green-500 animate-ping"></div>
-                  {/if}
-                {/if}
-              </div>
-              <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
-                {#if transfer.status === 'new' || transfer.status === 'checking'}
-                  <Loader2 size={10} class="animate-spin" />
-                  WAITING FOR PEER...
-                {:else}
-                  <Activity size={10} />
-                  {transfer.status}
-                {/if}
-              </p>
+        <div class="bg-[--surface-0] shadow-monolith rounded-lg p-10 flex flex-col items-center gap-6">
+          <div class="relative">
+            <div class="w-16 h-16 border-[3px] border-[--surface-200] rounded-full flex items-center justify-center">
+              <div class="w-10 h-10 border-[2px] border-[--surface-300] border-t-[--surface-600] rounded-full animate-spin"></div>
             </div>
-            <button 
-              onclick={copyRoomId}
-              class="flex items-center gap-1.5 px-3 py-1.5 bg-white text-blue-600 hover:text-blue-700 border border-blue-100 rounded-lg transition-all active:scale-95 text-[10px] font-black shadow-sm"
-            >
-              <Copy size={12} strokeWidth={2.5} />
-              COPY ID
-            </button>
           </div>
-          <div class="group relative">
-            <p class="text-xs text-gray-600 font-mono break-all bg-white p-4 rounded-xl border border-blue-100 shadow-sm leading-relaxed">
-              {transfer.roomId}
-            </p>
-          </div>
-          <div class="flex items-center gap-1.5 text-[9px] font-bold text-blue-400 uppercase tracking-tighter">
-            <ShieldCheck size={10} />
-            End-to-End Encrypted Signaling
+          <div class="text-center space-y-1">
+            <p class="text-sm font-medium text-[--surface-700]">Initializing</p>
+            <p class="text-xs text-[--surface-400]">Setting up secure connection</p>
           </div>
         </div>
       {/if}
-
-      <!-- Transfer Section -->
-      {#if transfer.status === 'connected'}
-        <div class="space-y-6 pt-6 border-t border-gray-100 animate-in fade-in zoom-in duration-300">
-          <div class="space-y-3">
-            <label for="file-upload" class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400">
-              <FileIcon size={14} />
-              Payload Selection
-            </label>
-            <div class="relative group">
-              <input 
-                id="file-upload"
-                type="file" 
-                onchange={handleFileChange}
-                class="w-full text-xs text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-xs file:font-black file:uppercase file:tracking-widest file:bg-gray-900 file:text-white hover:file:bg-black transition-all cursor-pointer bg-gray-50 rounded-xl border border-dashed border-gray-200 p-2"
-              />
-            </div>
-          </div>
-
-          <button 
-            onclick={handleSendFile}
-            disabled={!selectedFile}
-            class="w-full py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-30 disabled:grayscale transition-all flex items-center justify-center gap-3 font-bold shadow-lg shadow-blue-100 active:scale-[0.98]"
-          >
-            <Send size={20} strokeWidth={2.5} />
-            Initialize Transfer
-          </button>
-
-          {#if transfer.progress > 0}
-            <div class="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
-              <div class="flex justify-between items-center mb-1">
-                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Data Stream</span>
-                <p class="text-xs font-black text-blue-600">{transfer.progress}%</p>
-              </div>
-              <div class="h-2 w-full bg-white rounded-full overflow-hidden border border-gray-100">
-                <div class="h-full bg-blue-600 transition-all duration-300 ease-out shadow-[0_0_12px_rgba(37,99,235,0.4)]" style="width: {transfer.progress}%"></div>
-              </div>
-            </div>
-          {/if}
-
-          {#if transfer.receivedFile}
-            <div class="p-5 bg-green-50 border border-green-100 rounded-2xl flex items-center justify-between gap-4 animate-in slide-in-from-bottom-4 duration-500">
-              <div class="flex items-center gap-4 min-w-0">
-                <div class="p-3 bg-white rounded-xl text-green-600 shadow-sm border border-green-100">
-                  <FileIcon size={24} strokeWidth={2.5} />
-                </div>
-                <div class="min-w-0">
-                  <p class="text-[9px] font-black text-green-600 uppercase tracking-widest mb-0.5">Incoming File</p>
-                  <p class="text-xs font-bold text-gray-900 truncate">{transfer.receivedFile.name}</p>
-                </div>
-              </div>
-              <button 
-                onclick={downloadFile}
-                class="flex items-center gap-2 px-5 py-3 bg-green-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-100 active:scale-95 shrink-0"
-              >
-                <Download size={16} strokeWidth={3} />
-                SAVE
-              </button>
-            </div>
-          {/if}
-        </div>
-      {/if}
     </div>
-  {:else}
-    <div class="w-full max-w-md bg-white p-16 rounded-3xl shadow-xl shadow-gray-100 flex flex-col items-center gap-6 border border-gray-50">
-      <div class="relative flex items-center justify-center">
-        <div class="w-16 h-16 border-[6px] border-blue-50 border-t-blue-600 rounded-full animate-spin"></div>
-        <Share2 size={24} class="absolute text-blue-600 animate-pulse" />
-      </div>
-      <div class="text-center space-y-1">
-        <p class="text-sm font-black text-gray-900 uppercase tracking-widest">Handshaking</p>
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Initializing RTC Subsystem</p>
-      </div>
-    </div>
-  {/if}
+  </div>
 
-  <div class="mt-auto pt-12 pb-6 flex flex-col items-center gap-4">
-    <p class="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">P2P File sharing</p>
-    
-    <div class="flex items-center gap-1.5 text-xs font-bold text-gray-400">
+  <footer class="py-8 text-center">
+    <p class="text-[10px] text-[--surface-300] tracking-widest uppercase">P2P File Transfer</p>
+    <div class="flex items-center justify-center gap-1.5 mt-2 text-xs text-[--surface-400]">
       <span>Made by</span>
-      <a 
-        href="https://github.com/AyushmanTripathy" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        class="text-blue-500 hover:text-blue-600 transition-colors"
-      >
+      <a href="https://github.com/AyushmanTripathy" target="_blank" rel="noopener noreferrer" class="text-[--surface-600] hover:text-[--surface-800] transition-colors">
         @AyushmanTripathy
       </a>
       <span>with</span>
-      <Heart size={14} class="text-red-500 fill-red-500" />
-      <span>and WebRTC</span>
+      <Heart size={12} class="text-[--surface-400]" />
+      <span>WebRTC</span>
     </div>
-  </div>
+  </footer>
 </main>
 
 <style>
   :global(body) {
-    background-color: #f9fafb;
+    background-color: var(--surface-50);
   }
 </style>

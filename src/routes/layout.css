@@ -1,1 +1,48 @@
 @import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+:root {
+  /* Industrial Palette - OKLCH Greys */
+  --surface-0: oklch(100% 0 0);
+  --surface-50: oklch(98% 0.002 240);
+  --surface-100: oklch(95% 0.005 240);
+  --surface-200: oklch(90% 0.01 240);
+  --surface-300: oklch(80% 0.015 240);
+  --surface-400: oklch(65% 0.02 240);
+  --surface-500: oklch(50% 0.02 240);
+  --surface-600: oklch(40% 0.02 240);
+  --surface-700: oklch(30% 0.02 240);
+  --surface-800: oklch(20% 0.02 240);
+  --surface-900: oklch(15% 0.02 240);
+  --surface-950: oklch(10% 0.02 240);
+
+  --accent-blue: oklch(55% 0.15 240);
+  --accent-green: oklch(65% 0.15 150);
+  --accent-red: oklch(60% 0.15 25);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--surface-50);
+  color: var(--surface-900);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom shadow for monolithic objects */
+.shadow-monolith {
+  box-shadow: 
+    0 0 0 1px var(--surface-200),
+    0 4px 12px -2px rgba(0, 0, 0, 0.05),
+    0 12px 24px -4px rgba(0, 0, 0, 0.03);
+}
+
+.shadow-monolith-active {
+  box-shadow: 
+    0 0 0 1px var(--surface-300),
+    0 8px 16px -2px rgba(0, 0, 0, 0.08),
+    0 16px 32px -4px rgba(0, 0, 0, 0.05);
+}
