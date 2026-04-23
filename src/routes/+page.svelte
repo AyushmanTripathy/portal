@@ -2,11 +2,12 @@
   import { WebRTCTransfer } from '$lib/transfer.svelte';
   import { toast } from 'svelte-sonner';
   import { onMount } from 'svelte';
-  import { Plus, Copy, LogIn, Send, Download, File as FileIcon, Share2, ShieldCheck, Activity } from '@lucide/svelte';
+  import { Plus, Copy, LogIn, Send, Download, File as FileIcon, Share2, ShieldCheck, Activity, Loader2, Heart } from '@lucide/svelte';
 
   let transfer = $state<WebRTCTransfer | null>(null);
   let roomIdInput = $state('');
   let selectedFile = $state<File | null>(null);
+  let isActionPending = $state(false);
 
   onMount(() => {
     transfer = new WebRTCTransfer();
@@ -14,21 +15,27 @@
 
   async function handleCreateRoom() {
     if (!transfer) return;
+    isActionPending = true;
     try {
       await transfer.startAsCaller();
       toast.success('Room created successfully!');
     } catch (e) {
       toast.error('Error creating room: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      isActionPending = false;
     }
   }
 
   async function handleJoinRoom() {
     if (!roomIdInput || !transfer) return;
+    isActionPending = true;
     try {
       await transfer.startAsCallee(roomIdInput);
       toast.success('Joined room successfully!');
     } catch (e) {
       toast.error('Error joining room: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      isActionPending = false;
     }
   }
 
@@ -85,9 +92,14 @@
         <div class="space-y-6">
           <button 
             onclick={handleCreateRoom}
-            class="w-full py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-bold shadow-lg shadow-blue-100 group"
+            disabled={isActionPending}
+            class="w-full py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-bold shadow-lg shadow-blue-100 group disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Plus size={22} strokeWidth={3} class="group-hover:rotate-90 transition-transform" />
+            {#if isActionPending}
+              <Loader2 size={22} class="animate-spin" />
+            {:else}
+              <Plus size={22} strokeWidth={3} class="group-hover:rotate-90 transition-transform" />
+            {/if}
             Create Share Room
           </button>
 
@@ -101,15 +113,21 @@
             <input 
               type="text" 
               bind:value={roomIdInput} 
+              disabled={isActionPending}
               placeholder="Paste Room ID..." 
-              class="flex-1 px-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-mono text-sm"
+              class="flex-1 px-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-mono text-sm disabled:opacity-50"
             />
             <button 
               onclick={handleJoinRoom}
-              class="px-5 py-3 bg-gray-900 text-white rounded-xl hover:bg-black active:scale-[0.95] transition-all flex items-center gap-2 font-bold shadow-lg shadow-gray-200"
+              disabled={isActionPending || !roomIdInput}
+              class="px-5 py-3 bg-gray-900 text-white rounded-xl hover:bg-black active:scale-[0.95] transition-all flex items-center gap-2 font-bold shadow-lg shadow-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Join Room"
             >
-              <LogIn size={20} strokeWidth={2.5} />
+              {#if isActionPending}
+                <Loader2 size={20} class="animate-spin" />
+              {:else}
+                <LogIn size={20} strokeWidth={2.5} />
+              {/if}
             </button>
           </div>
         </div>
@@ -118,14 +136,24 @@
           <div class="flex justify-between items-center">
             <div class="flex items-center gap-2">
               <div class="relative flex items-center justify-center">
-                <div class="w-2 h-2 rounded-full {transfer.status === 'connected' ? 'bg-green-500' : 'bg-amber-500'}"></div>
-                {#if transfer.status === 'connected'}
-                  <div class="absolute w-2 h-2 rounded-full bg-green-500 animate-ping"></div>
+                {#if transfer.status === 'new' || transfer.status === 'checking'}
+                  <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                  <div class="absolute w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                {:else}
+                  <div class="w-2 h-2 rounded-full {transfer.status === 'connected' ? 'bg-green-500' : 'bg-red-500'}"></div>
+                  {#if transfer.status === 'connected'}
+                    <div class="absolute w-2 h-2 rounded-full bg-green-500 animate-ping"></div>
+                  {/if}
                 {/if}
               </div>
               <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
-                <Activity size={10} />
-                {transfer.status}
+                {#if transfer.status === 'new' || transfer.status === 'checking'}
+                  <Loader2 size={10} class="animate-spin" />
+                  WAITING FOR PEER...
+                {:else}
+                  <Activity size={10} />
+                  {transfer.status}
+                {/if}
               </p>
             </div>
             <button 
@@ -223,7 +251,24 @@
     </div>
   {/if}
 
-  <p class="mt-8 text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">P2P Protocol Layer v1.0</p>
+  <div class="mt-auto pt-12 pb-6 flex flex-col items-center gap-4">
+    <p class="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">P2P File sharing</p>
+    
+    <div class="flex items-center gap-1.5 text-xs font-bold text-gray-400">
+      <span>Made by</span>
+      <a 
+        href="https://github.com/AyushmanTripathy" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        class="text-blue-500 hover:text-blue-600 transition-colors"
+      >
+        @AyushmanTripathy
+      </a>
+      <span>with</span>
+      <Heart size={14} class="text-red-500 fill-red-500" />
+      <span>and WebRTC</span>
+    </div>
+  </div>
 </main>
 
 <style>

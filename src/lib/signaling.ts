@@ -11,9 +11,27 @@ import {
   type QuerySnapshot
 } from 'firebase/firestore';
 
+function generateShortId(length = 4) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 export async function createRoom() {
-  const roomRef = doc(collection(db, 'rooms'));
-  const roomId = roomRef.id;
+  let roomId = generateShortId();
+  let roomRef = doc(db, 'rooms', roomId);
+  let roomSnapshot = await getDoc(roomRef);
+
+  // Try until we find a unique ID
+  while (roomSnapshot.exists()) {
+    roomId = generateShortId();
+    roomRef = doc(db, 'rooms', roomId);
+    roomSnapshot = await getDoc(roomRef);
+  }
+
   return { roomRef, roomId };
 }
 
