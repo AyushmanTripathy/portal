@@ -11,6 +11,7 @@
   let selectedFile = $state<File | null>(null);
   let isActionPending = $state(false);
   let isDragging = $state(false);
+  let isHovering = $state(false);
   let copiedState = $state<'idle' | 'copied'>('idle');
   let sendState = $state<'idle' | 'sending' | 'sent'>('idle');
   let downloadState = $state<'idle' | 'downloading' | 'downloaded'>('idle');
@@ -229,10 +230,12 @@
                 <div 
                   role="region"
                   aria-label="File drop zone"
-                  class="relative border-2 border-dashed {isDragging ? 'border-[--surface-600] bg-[--surface-100]' : 'border-[--surface-300]'} rounded p-6 transition-colors text-center"
+                  class="group relative border-2 border-dashed {isDragging ? 'border-[--surface-700] bg-[--surface-100] scale-[1.02]' : isHovering ? 'border-[--surface-500] bg-[--surface-50]' : 'border-[--surface-300]'} rounded-lg p-6 transition-all duration-200 text-center cursor-pointer"
                   ondragover={handleDragOver}
                   ondragleave={handleDragLeave}
                   ondrop={handleDrop}
+                  onmouseenter={() => isHovering = true}
+                  onmouseleave={() => isHovering = false}
                 >
                   <input 
                     id="file-upload"
@@ -241,11 +244,11 @@
                     class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
                   {#if selectedFile}
-                    <FileIcon size={24} class="mx-auto text-[--surface-600] mb-2" />
+                    <FileIcon size={24} class="mx-auto text-[--surface-600] mb-2 group-hover:scale-110 transition-transform" />
                     <p class="text-sm text-[--surface-800] truncate max-w-[200px] mx-auto">{selectedFile.name}</p>
                     <p class="text-xs text-[--surface-400] mt-0.5">{formatBytes(selectedFile.size)}</p>
                   {:else}
-                    <FileIcon size={24} class="mx-auto text-[--surface-400] mb-2" />
+                    <FileIcon size={24} class="mx-auto text-[--surface-400] mb-2 group-hover:scale-110 transition-transform" />
                     <p class="text-sm text-[--surface-600]">Drop file here</p>
                     <p class="text-xs text-[--surface-400] mt-0.5">or click to browse</p>
                   {/if}
