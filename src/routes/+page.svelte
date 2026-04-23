@@ -70,6 +70,7 @@
     try {
       await transfer.sendFile(selectedFile);
       sendState = 'sent';
+      //selectedFile = null;
       toast.success('Sent');
       setTimeout(() => {
         sendState = 'idle';
@@ -169,23 +170,29 @@
                 <div class="flex-1 h-px bg-[--surface-200]"></div>
               </div>
 
-              <div class="flex gap-2">
-                <input 
-                  type="text" 
-                  bind:value={roomIdInput} 
-                  disabled={isActionPending}
-                  placeholder="Room ID"
-                  class="flex-1 px-3 py-2.5 bg-[--surface-50] border border-[--surface-200] rounded text-sm focus:outline-none focus:border-[--surface-500] transition-all duration-200 disabled:opacity-50"
-                  onkeydown={(e) => {
-                    if (e.key === 'Enter' && roomIdInput && !isActionPending) {
-                      handleJoinRoom();
-                    }
-                  }}
-                />
+              <div class="flex gap-2 items-end">
+                <div class="flex-1">
+                  <label for="room-id" class="block text-[10px] text-[--surface-400] uppercase tracking-widest mb-2">
+                    Room ID
+                  </label>
+                  <input 
+                    id="room-id"
+                    type="text" 
+                    bind:value={roomIdInput} 
+                    disabled={isActionPending}
+                    placeholder="XXXX"
+                    class="w-full px-3 py-2.5 bg-[--surface-50] border border-[--surface-200] rounded text-sm focus:outline-none focus:border-[--surface-300] focus:ring-4 focus:ring-[--surface-300]/10 transition-all duration-200 disabled:opacity-50"
+                    onkeydown={(e) => {
+                      if (e.key === 'Enter' && roomIdInput && !isActionPending) {
+                        handleJoinRoom();
+                      }
+                    }}
+                  />
+                </div>
                 <button 
                   onclick={handleJoinRoom}
                   disabled={isActionPending || !roomIdInput}
-                  class="px-4 py-2.5 bg-[--surface-100] text-[--surface-700] rounded hover:bg-[--surface-200] active:scale-[0.98] transition-all flex items-center gap-2 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  class="px-4 py-2.5 bg-[--surface-100] text-[--surface-700] rounded hover:bg-[--surface-200] active:scale-[0.98] transition-all flex items-center gap-2 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer h-[42px]"
                 >
                   <LogIn size={18} />
                 </button>
@@ -195,7 +202,7 @@
             <div class="p-4 bg-[--surface-50] rounded space-y-4 animate-[fadeIn_0.3s_ease-out]">
               <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
-                  <div class="w-2 h-2 rounded-full {transfer.status === 'connected' ? 'bg-[--surface-900] animate-pulse' : 'bg-[--surface-400]'}"></div>
+                  <div class="w-2 h-2 rounded-full {transfer.status === 'connected' ? 'bg-[--surface-900] animate-[connectPulse_1.5s_ease-in-out_infinite]' : 'bg-[--surface-400]'}"></div>
                   <span class="text-[10px] text-[--surface-500] uppercase tracking-wider">
                     {transfer.status === 'connected' ? 'Connected' : 'Waiting...'}
                   </span>
@@ -284,8 +291,10 @@
                     <span class="text-[--surface-500]">Transferring</span>
                     <span class="text-[--surface-700]">{transfer.progress}%</span>
                   </div>
-                  <div class="h-1 bg-[--surface-200] rounded-full overflow-hidden">
-                    <div class="h-full bg-[--surface-800] transition-all duration-300 ease-out" style="width: {transfer.progress}%"></div>
+                  <div class="h-1 bg-[--surface-200] rounded-full overflow-hidden relative">
+                    <div class="h-full bg-[--surface-800] transition-all duration-300 ease-out relative overflow-hidden" style="width: {transfer.progress}%">
+                      <div class="absolute inset-0 bg-white/20 animate-[shimmer_1s_ease-in-out_infinite]"></div>
+                    </div>
                   </div>
                 </div>
               {/if}
