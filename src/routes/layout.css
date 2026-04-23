@@ -25,11 +25,28 @@
   --accent-red: oklch(60% 0.15 25);
 }
 
+/* Dark mode overrides */
+.dark {
+  --surface-0: oklch(15% 0.01 240);
+  --surface-50: oklch(20% 0.01 240);
+  --surface-100: oklch(25% 0.01 240);
+  --surface-200: oklch(30% 0.01 240);
+  --surface-300: oklch(40% 0.01 240);
+  --surface-400: oklch(50% 0.01 240);
+  --surface-500: oklch(60% 0.01 240);
+  --surface-600: oklch(70% 0.01 240);
+  --surface-700: oklch(80% 0.01 240);
+  --surface-800: oklch(90% 0.01 240);
+  --surface-900: oklch(95% 0.005 240);
+  --surface-950: oklch(98% 0.002 240);
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--surface-50);
   color: var(--surface-900);
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Custom shadow for monolithic objects */

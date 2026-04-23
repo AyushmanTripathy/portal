@@ -2,7 +2,9 @@
   import { WebRTCTransfer } from '$lib/transfer.svelte';
   import { toast } from 'svelte-sonner';
   import { onMount } from 'svelte';
-  import { Plus, Copy, Check, LogIn, Send, File as FileIcon, ShieldCheck, Loader2, Heart, ArrowUp, Download } from '@lucide/svelte';
+  import { Plus, Copy, Check, LogIn, Send, File as FileIcon, ShieldCheck, Loader2, Heart, ArrowUp, Download, Moon, Sun } from '@lucide/svelte';
+  import { toggleMode } from 'mode-watcher';
+  import { mode } from 'mode-watcher';
 
   let transfer = $state<WebRTCTransfer | null>(null);
   let roomIdInput = $state('');
@@ -124,9 +126,23 @@
 <main class="min-h-screen flex flex-col">
   <div class="flex-1 flex flex-col items-center justify-center p-6">
     <div class="w-full max-w-sm animate-[fadeIn_0.5s_ease-out]">
-      <header class="text-center mb-12 animate-[fadeInUp_0.5s_ease-out_0.1s_both]">
-        <h1 class="text-2xl font-medium tracking-tight text-[--surface-900]">Portal</h1>
-        <p class="text-xs text-[--surface-400] mt-1">Secure P2P transfer</p>
+      <header class="flex items-center justify-between mb-12 animate-[fadeInUp_0.5s_ease-out_0.1s_both]">
+        <div class="flex-1 text-left">
+          <h1 class="text-2xl font-medium tracking-tight text-[--surface-900]">Portal</h1>
+          <p class="text-xs text-[--surface-400] mt-1">Secure P2P transfer</p>
+        </div>
+        <button 
+          type="button"
+          onclick={() => toggleMode()}
+          class="p-2 rounded-full text-[--surface-500] hover:text-[--surface-700] hover:bg-[--surface-100] transition-colors cursor-pointer"
+          aria-label="Toggle theme"
+        >
+          {#if mode.current === 'dark'}
+            <Sun size={18} />
+          {:else}
+            <Moon size={18} />
+          {/if}
+        </button>
       </header>
 
       {#if transfer}
@@ -320,9 +336,3 @@
     </div>
   </footer>
 </main>
-
-<style>
-  :global(body) {
-    background-color: var(--surface-50);
-  }
-</style>
