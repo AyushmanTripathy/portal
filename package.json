@@ -30,6 +30,7 @@
 	"dependencies": {
 		"@lucide/svelte": "^1.8.0",
 		"firebase": "^12.12.1",
+		"mode-watcher": "^1.1.0",
 		"svelte-sonner": "^1.1.0"
 	}
 }
