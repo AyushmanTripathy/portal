@@ -124,7 +124,7 @@
   }
 </script>
 
-<main class="min-h-screen flex flex-col">
+<main class="min-h-screen flex flex-col overflow-hidden">
   <div class="flex-1 flex flex-col items-center justify-center p-6">
     <div class="w-full max-w-sm animate-[fadeIn_0.5s_ease-out]">
       <header class="flex items-center justify-between mb-12 animate-[fadeInUp_0.5s_ease-out_0.1s_both]">
@@ -176,6 +176,11 @@
                   disabled={isActionPending}
                   placeholder="Room ID"
                   class="flex-1 px-3 py-2.5 bg-[--surface-50] border border-[--surface-200] rounded text-sm focus:outline-none focus:border-[--surface-500] transition-all duration-200 disabled:opacity-50"
+                  onkeydown={(e) => {
+                    if (e.key === 'Enter' && roomIdInput && !isActionPending) {
+                      handleJoinRoom();
+                    }
+                  }}
                 />
                 <button 
                   onclick={handleJoinRoom}
